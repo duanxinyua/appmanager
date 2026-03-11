@@ -126,8 +126,8 @@ td{color:var(--text2)}
 <div class="modal-overlay" id="modalAddApp">
   <div class="modal">
     <h3>添加应用</h3>
-    <div class="form-group"><label>应用标识（唯一, 如 beike）</label><input id="newAppKey" placeholder="beike"></div>
-    <div class="form-group"><label>应用名称</label><input id="newAppName" placeholder="贝壳"></div>
+    <div class="form-group"><label>应用标识（唯一, 如 demo_app）</label><input id="newAppKey" placeholder="demo_app"></div>
+    <div class="form-group"><label>应用名称</label><input id="newAppName" placeholder="示例应用"></div>
     <div class="form-group"><label>应用图标</label><input type="file" id="newAppIcon" accept="image/*"><div id="iconPreview" style="margin-top:8px"></div></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modalAddApp')">取消</button>

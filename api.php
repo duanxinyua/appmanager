@@ -111,17 +111,18 @@ function action_check() {
     $latestCode = intval($latest['version_code'] ?? 0);
     $latestName = trim($latest['version_name'] ?? '');
 
-    // 优先使用 version_name 进行严格的语义化版本号比对，能防范 version_code 在不同基座下混乱的问题
-    if ($version_name !== '' && $latestName !== '') {
-        // 如果本地版本号 >= 线上最新版本号，则不需要更新
-        if (version_compare($version_name, $latestName, '>=')) {
-            json_out(['has_update' => false]);
-        }
-    } else {
-        // 退化到仅用 version_code 比较
-        if ($latestCode <= $version_code) {
-            json_out(['has_update' => false]);
-        }
+    // 仅当两边都是点分语义版本时才按 version_name 比较。
+    // 对于 110 / 111 这种纯数字版本名，version_compare() 会误判，应回退到 version_code。
+    $useVersionNameCompare =
+        preg_match('/^\d+(?:\.\d+)+$/', $version_name) &&
+        preg_match('/^\d+(?:\.\d+)+$/', $latestName);
+
+    if ($useVersionNameCompare && version_compare($version_name, $latestName, '>=')) {
+        json_out(['has_update' => false]);
+    }
+
+    if ($latestCode <= $version_code) {
+        json_out(['has_update' => false]);
     }
 
     // 构造完整下载 URL

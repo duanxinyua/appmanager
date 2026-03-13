@@ -238,13 +238,16 @@ async function api(action, body, method = 'GET') {
 }
 
 // ===== Dashboard =====
-async function loadDashboard() {
+async function loadDashboard(expandedAppKey = null) {
   const d = await api('dashboard');
   if (d.error) return;
   document.getElementById('statApps').textContent = d.total_apps;
   document.getElementById('statVersions').textContent = d.total_versions;
   document.getElementById('statDownloads').textContent = formatNum(d.total_downloads);
   renderAppList(d.apps);
+  if (expandedAppKey) {
+    await refreshVersions(expandedAppKey);
+  }
 }
 
 function formatNum(n) {
@@ -321,12 +324,9 @@ async function deleteApp(key, name) {
 }
 
 // ===== Versions =====
-async function toggleVersions(appKey) {
+async function refreshVersions(appKey) {
   const el = document.getElementById('ver_' + appKey);
-  if (el.style.display !== 'none') {
-    el.style.display = 'none';
-    return;
-  }
+  if (!el) return;
   el.innerHTML = '<div style="padding:12px;color:var(--text3)">加载中...</div>';
   el.style.display = 'block';
 
@@ -357,6 +357,16 @@ async function toggleVersions(appKey) {
       </td>
     </tr>`).join('')}
   </table>`;
+}
+
+async function toggleVersions(appKey) {
+  const el = document.getElementById('ver_' + appKey);
+  if (!el) return;
+  if (el.style.display !== 'none') {
+    el.style.display = 'none';
+    return;
+  }
+  await refreshVersions(appKey);
 }
 
 function bumpVersion(ver) {
@@ -408,20 +418,13 @@ async function submitUploadVer() {
 
 async function toggleVer(id, appKey) {
   await api('toggle_version', { id }, 'POST');
-  toggleVersions(appKey);
-  // 重新折叠再展开以刷新
-  const el = document.getElementById('ver_' + appKey);
-  el.style.display = 'none';
-  setTimeout(() => toggleVersions(appKey), 50);
+  await loadDashboard(appKey);
 }
 
 async function deleteVer(id, appKey) {
   if (!confirm('确定删除此版本？')) return;
   await api('delete_version', { id }, 'POST');
-  const el = document.getElementById('ver_' + appKey);
-  el.style.display = 'none';
-  toggleVersions(appKey);
-  loadDashboard();
+  await loadDashboard(appKey);
 }
 
 // ===== Modal =====

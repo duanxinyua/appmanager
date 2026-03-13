@@ -7,12 +7,23 @@ class DB {
     public static function get() {
         if (self::$pdo === null) {
             $dbDir = __DIR__ . '/../data';
-            if (!is_dir($dbDir)) {
-                mkdir($dbDir, 0755, true);
-            }
+            self::ensureDirectory($dbDir, '数据库目录');
 
             $dbPath = $dbDir . '/appmanager.db';
-            self::$pdo = new PDO('sqlite:' . $dbPath);
+            if (file_exists($dbPath) && !is_writable($dbPath)) {
+                throw new RuntimeException('数据库文件不可写: ' . $dbPath . '，请确认 Web 服务进程对该文件有写权限');
+            }
+
+            try {
+                self::$pdo = new PDO('sqlite:' . $dbPath);
+            } catch (PDOException $e) {
+                throw new RuntimeException(
+                    '无法打开 SQLite 数据库文件: ' . $dbPath . '，请确认 data/ 目录存在且 Web 服务进程可写',
+                    0,
+                    $e
+                );
+            }
+
             self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             self::$pdo->exec('PRAGMA journal_mode=WAL');
@@ -79,5 +90,15 @@ class DB {
 
     public static function execute($sql, $params = []) {
         return self::query($sql, $params)->rowCount();
+    }
+
+    private static function ensureDirectory($dir, $label) {
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            throw new RuntimeException($label . '创建失败: ' . $dir . '，请确认 Web 服务进程对该路径有写权限');
+        }
+
+        if (!is_writable($dir)) {
+            throw new RuntimeException($label . '不可写: ' . $dir . '，请确认 Web 服务进程对该路径有写权限');
+        }
     }
 }

@@ -78,6 +78,16 @@ try {
     json_out(['error' => $e->getMessage()], 500);
 }
 
+function ensure_runtime_dir($dir, $label) {
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+        json_out(['error' => $label . '创建失败，请确认 Web 服务进程对该目录有写权限: ' . $dir], 500);
+    }
+
+    if (!is_writable($dir)) {
+        json_out(['error' => $label . '不可写，请确认目录权限: ' . $dir], 500);
+    }
+}
+
 // ===== 公开接口实现 =====
 
 function action_check() {
@@ -296,9 +306,7 @@ function handle_icon_upload($app_key) {
     }
 
     $iconDir = __DIR__ . '/uploads/icons';
-    if (!is_dir($iconDir)) {
-        mkdir($iconDir, 0755, true);
-    }
+    ensure_runtime_dir($iconDir, '图标目录');
 
     $fileName = $app_key . '_icon.' . $ext;
     $destPath = $iconDir . '/' . $fileName;
@@ -398,9 +406,7 @@ function action_upload_version() {
         }
 
         $uploadDir = __DIR__ . '/uploads';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
+        ensure_runtime_dir($uploadDir, '上传目录');
 
         $file_name = $app_key . '_v' . $version_name . '.' . $ext;
         $destPath = $uploadDir . '/' . $file_name;
